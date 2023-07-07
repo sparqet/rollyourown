@@ -1,5 +1,8 @@
 import BorderImage from "@/components/icons/BorderImage";
+import { generatePixelBorderPath } from "@/utils/ui";
 import { ComponentStyleConfig } from "@chakra-ui/react";
+
+import colors from "../colors";
 
 export const Button: ComponentStyleConfig = {
   defaultProps: {
@@ -17,24 +20,9 @@ export const Button: ComponentStyleConfig = {
     gap: "10px",
     bgColor: "neon.900",
     transition: "none",
-    _before: {
-      content: '""',
-      position: "absolute",
-      bottom: "-4px",
-      right: "-4px",
-      height: "100%",
-      width: "100%",
-      borderStyle: "solid",
-      borderWidth: "2px",
-      borderImageSlice: "4",
-      borderImageWidth: "0 6px 6px 0",
-    },
     _active: {
       top: "2px",
       left: "2px",
-      _before: {
-        display: "none",
-      },
     },
     _disabled: {
       pointerEvents: "none",
@@ -43,31 +31,31 @@ export const Button: ComponentStyleConfig = {
   variants: {
     primary: {
       color: "neon.200",
-      borderImageSource: `url("data:image/svg+xml,${BorderImage("#11ED83")}")`,
-      _before: {
-        borderImageSource: `url("data:image/svg+xml,${BorderImage(
-          "#11ED83",
-        )}")`,
-      },
+      borderImageSource: `url("data:image/svg+xml,${BorderImage({
+        color: colors.neon["200"].toString(),
+        isPressed: false,
+      })}")`,
       _hover: {
         color: "neon.300",
-        borderImageSource: `url("data:image/svg+xml,${BorderImage(
-          "#16C973",
-        )}")`,
-        _before: {
-          borderImageSource: `url("data:image/svg+xml,${BorderImage(
-            "#16C973",
-          )}")`,
-        },
+        borderImageSource: `url("data:image/svg+xml,${BorderImage({
+          color: colors.neon["300"].toString(),
+          isPressed: false,
+        })}")`,
+      },
+      _active: {
+        borderImageSource: `url("data:image/svg+xml,${BorderImage({
+          color: colors.neon["300"].toString(),
+          isPressed: true,
+        })}")`,
       },
     },
-    secondary: {
-      color: "neon.500",
-      borderImageSource: `url("data:image/svg+xml,${BorderImage("#16C973")}")`,
-      _before: {
-        borderImageSource: `url("data:image/svg+xml,${BorderImage(
-          "#157342",
-        )}")`,
+    pixelated: {
+      border: 0,
+      bg: "neon.700",
+      lineHeight: "1em",
+      clipPath: `polygon(${generatePixelBorderPath()})`,
+      _hover: {
+        bg: "neon.600",
       },
     },
     default: {},

@@ -5,6 +5,7 @@ import {
   Text,
   StyleProps,
   Flex,
+  Box,
 } from "@chakra-ui/react";
 import { ReactNode } from "react";
 import Header from "./Header";
@@ -13,26 +14,36 @@ import { IsMobile } from "@/utils/ui";
 import { motion } from "framer-motion";
 
 export interface LayoutProps {
+  backHeader?: boolean;
   title: string;
   map: ReactNode;
   prefixTitle: string;
   backgroundImage: string;
+  headerImage: string;
+  headerImageMaxWidth: string;
   children: ReactNode;
+  footer: ReactNode;
 }
 
 import CrtEffect from "./CrtEffect";
 
 const Layout = ({
+  backHeader,
   title,
   prefixTitle,
   map,
   backgroundImage,
+  headerImage,
+  headerImageMaxWidth,
   children,
+  footer,
   ...props
 }: Partial<LayoutProps> & StyleProps) => {
+  const isMobile = IsMobile();
+
   return (
     <>
-      <Header />
+      <Header back={backHeader} />
       <Flex
         position="fixed"
         top="0"
@@ -44,7 +55,7 @@ const Layout = ({
         animate={{ opacity: 1 }}
       >
         <VStack
-          // convert to next/image for better optimization
+          //convert to next/image for better optimization
           backgroundImage={[
             "",
             `linear-gradient(to bottom, #172217 0%, transparent 40%, transparent 90%, #172217 100%), ${backgroundImage}`,
@@ -58,9 +69,26 @@ const Layout = ({
           position="relative"
         >
           <Title title={title} prefixTitle={prefixTitle} hasMap={!!map} />
-          <Flex position="absolute" top="0" boxSize="full" justify="center">
+          <Flex position="absolute" boxSize="full" justify="center">
             {map}
           </Flex>
+          {headerImage && !isMobile && (
+            <Box
+              position="relative"
+              marginTop="1rem !important"
+              width="80%"
+              height="55vh"
+              maxWidth={headerImageMaxWidth ? headerImageMaxWidth : "480px"}
+            >
+              <Image
+                fill={true}
+                src={headerImage}
+                objectFit="contain"
+                alt={headerImage}
+              />
+            </Box>
+          )}
+          {!IsMobile() && footer && footer}
         </VStack>
         <VStack
           flex={map && IsMobile() ? "0" : "1"}
@@ -92,8 +120,8 @@ const Title = ({
   <VStack
     spacing="0"
     w="full"
-    h={[hasMap ? "15%" : "50%", "30%"]}
-    position="absolute"
+    h={[hasMap ? "15%" : "50%", "25%"]}
+    // position="absolute"
     pointerEvents="none"
     justify="flex-end"
     zIndex="2"
@@ -102,7 +130,9 @@ const Title = ({
     <Text textStyle="subheading" fontSize="11px">
       {prefixTitle}
     </Text>
-    <Heading fontSize={["40px", "48px"]}>{title}</Heading>
+    <Heading fontSize={["40px", "48px"]} fontWeight="normal">
+      {title}
+    </Heading>
   </VStack>
 );
 

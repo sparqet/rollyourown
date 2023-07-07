@@ -1,115 +1,79 @@
 import Content from "@/components/Content";
 import { Footer } from "@/components/Footer";
 import Header from "@/components/Header";
-import { Arrow, ArrowEnclosed } from "@/components/icons";
+import Input from "@/components/Input";
 import Layout from "@/components/Layout";
-import {
-  HStack,
-  VStack,
-  Container,
-  Button,
-  Text,
-  Card,
-  CardHeader,
-  CardBody,
-  CardFooter,
-  Divider,
-  Input,
-  Flex,
-  Spacer,
-  useCounter,
-  UnorderedList,
-  ListItem,
-} from "@chakra-ui/react";
+import Button from "@/components/Button";
+import { Dropdown } from "@/components/Dropdown";
+import { InputNumber } from "@/components/InputNumber";
+import { HStack, Text, UnorderedList, ListItem } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { ReactNode, useState } from "react";
+import { playSound, Sounds } from "@/hooks/sound";
 
 const MIN_PLAYERS = 6;
 const MIN_TURNS = 10;
 
 export default function Create() {
   const router = useRouter();
-  const {
-    increment: incPlayers,
-    decrement: decPlayers,
-    value: numPlayers,
-  } = useCounter({
-    defaultValue: MIN_PLAYERS,
-    min: MIN_PLAYERS,
-  });
 
-  const {
-    increment: incTurns,
-    decrement: decTurns,
-    value: numTurns,
-  } = useCounter({
-    defaultValue: 30,
-    min: MIN_TURNS,
-  });
+  const [numTurns, setNumTurns] = useState<number>(30);
+  const handleNumTurns = (numTurns: number) => {
+    setNumTurns(numTurns);
+  };
+
+  const [numPlayers, setNumPlayers] = useState<number>(MIN_PLAYERS);
+  const handleNumPlayer = (numPlayers: number) => {
+    setNumPlayers(numPlayers);
+  };
 
   return (
     <Layout
       title="New Game"
       prefixTitle="Start a"
-      backgroundImage="url('https://static.cartridge.gg/games/dope-wars/ryo/cash_roll.png');"
+      headerImage="/images/punk-girl.png"
     >
       <Content>
         <UnorderedList variant="underline" w="full" userSelect="none">
           <ListItem>
             <HStack>
               <Label name="Title" />
-              <Input />
+              <Input placeholder="ENTER GAME TITLE HERE" />
             </HStack>
           </ListItem>
           <ListItem>
             <HStack>
               <Label name="Turns" />
-              <Text>{numTurns}</Text>
-              <Spacer />
-              <HStack>
-                <ArrowEnclosed
-                  variant="caret"
-                  size="sm"
-                  cursor="pointer"
-                  onClick={() => incTurns()}
-                />
-                <ArrowEnclosed
-                  variant="caret"
-                  direction="down"
-                  size="sm"
-                  cursor="pointer"
-                  color={numTurns <= MIN_TURNS ? "neon.500" : "neon.200"}
-                  onClick={() => decTurns()}
-                />
-              </HStack>
+              <InputNumber
+                value={numTurns}
+                min={MIN_TURNS}
+                onChange={handleNumTurns}
+              />
             </HStack>
           </ListItem>
           <ListItem>
             <HStack>
               <Label name="Players" />
-              <Text>{numPlayers}</Text>
-              <Spacer />
-              <HStack>
-                <ArrowEnclosed
-                  variant="caret"
-                  size="sm"
-                  cursor="pointer"
-                  onClick={() => incPlayers()}
-                />
-                <ArrowEnclosed
-                  variant="caret"
-                  direction="down"
-                  size="sm"
-                  cursor="pointer"
-                  color={numPlayers <= MIN_PLAYERS ? "neon.500" : "neon.200"}
-                  onClick={() => decPlayers()}
-                />
-              </HStack>
+              <InputNumber
+                value={numPlayers}
+                min={MIN_PLAYERS}
+                onChange={handleNumPlayer}
+              />
             </HStack>
           </ListItem>
           <ListItem>
             <HStack>
-              <Label name="Starts" /> <Text>20:00 UTC</Text>
+              <Label name="Starts" />
+              <Dropdown
+                w="full"
+                value={{ value: 1, text: "20:00 UTC", label: "(29 min)" }}
+                options={[
+                  { value: 1, text: "20:00 UTC", label: "(29 min)" },
+                  { value: 2, text: "20:30 UTC", label: "(59 min)" },
+                  { value: 3, text: "21:00 UTC", label: "(1 hr 29 min)" },
+                  { value: 4, text: "21:30 UTC", label: "(1 hr 59 min)" },
+                ]}
+              />
             </HStack>
           </ListItem>
         </UnorderedList>
@@ -121,6 +85,7 @@ export default function Create() {
         <Button
           w={["full", "auto"]}
           onClick={() => router.push("/pending/0x123")}
+          clickSound={Sounds.Magnum357}
         >
           Create New Game
         </Button>

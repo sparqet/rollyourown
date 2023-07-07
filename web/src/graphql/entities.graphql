@@ -1,0 +1,58 @@
+query PlayerEntity($id: ID!) {
+  entity(id: $id) {
+    components {
+      __typename
+      ... on Player {
+        name
+        cash
+        health
+        arrested
+        turns_remaining
+      }
+      ... on Location {
+        name
+      }
+      ... on Drug {
+        name
+        quantity
+      }
+    }
+  }
+}
+
+query GameEntity($id: ID!) {
+  entity(id: $id) {
+    components {
+      __typename
+      ... on Game {
+        creator
+        game_id
+        is_finished
+        max_players
+        max_turns
+        num_players
+        start_time
+      }
+    }
+  }
+}
+
+query LocationEntities($gameId: String!, $location: String!) {
+  entities(keys: [$gameId, $location]) {
+    components {
+      ... on Market {
+        cash
+        quantity
+      }
+      ... on Location {
+        name
+      }
+      ... on Risks {
+        arrested
+        hurt
+        mugged
+        travel
+      }
+    }
+  }
+}

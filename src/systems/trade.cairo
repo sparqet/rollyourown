@@ -1,16 +1,18 @@
 #[system]
-mod Buy {
+mod buy {
     use traits::Into;
     use array::ArrayTrait;
     use debug::PrintTrait;
 
-    use rollyourown::components::{game::{Game, GameTrait}, drug::Drug, market::{Market, MarketTrait}, location::Location};
-    use rollyourown::components::{player::Cash, risks::{Risks, RisksTrait}};
+    use dojo::world::Context;
+
+    use rollyourown::components::{
+        game::{Game, GameTrait}, drug::Drug, market::{Market, MarketTrait}, location::Location
+    };
+    use rollyourown::components::{player::Player, risks::{Risks, RisksTrait}};
 
     #[event]
-    fn Bought(
-        game_id: felt252, player_id: felt252, drug_id: felt252, quantity: usize, cost: u128
-    ) {}
+    fn Bought(game_id: u32, player_id: felt252, drug_name: felt252, quantity: usize, cost: u128) {}
 
     // 1. Verify the caller owns the player.
     // 2. Get current price for location for quantity.
@@ -18,53 +20,61 @@ mod Buy {
     // 4. Perform the trade.
     // 5. Update the location's inventory.
     // 6. Update the player's inventory.
-    fn execute(game_id: felt252, location_id: felt252, drug_id: felt252, quantity: usize) {
-        let game = commands::<Game>::entity(game_id.into());
+    fn execute(
+        ctx: Context, game_id: u32, location_name: felt252, drug_name: felt252, quantity: usize
+    ) {
+        let game = get !(ctx.world, game_id.into(), Game);
         assert(game.tick(), 'cannot progress');
 
-        let player_id = starknet::get_caller_address().into();
-        let (location, cash) = commands::<(
-            Location, Cash
-        )>::entity((game_id, (player_id)).into_partitioned());
-        let market = commands::<Market>::entity(
-            (game_id, (location_id, drug_id)).into_partitioned()
-        );
+        let player_id = ctx.origin.into();
+        let (location, player) = get !(ctx.world, (game_id, player_id).into(), (Location, Player));
+        assert(location.name == location_name, 'player is not at location');
+
+        let market = get !(ctx.world, (game_id, location_name, drug_name).into(), Market);
 
         let cost = market.buy(quantity);
-        assert(cost < cash.amount, 'not enough cash');
-
-        // FIX: moving this to end of function for some reason causes
-        // dojo-test error: #4864: Inconsistent references annotations.
-        Bought(game_id, player_id, drug_id, quantity, cost);
+        assert(cost < player.cash, 'not enough cash');
 
         // update market
-        commands::set_entity(
-            (game_id, (location_id, drug_id)).into_partitioned(),
+        set !(
+            ctx.world,
+            (game_id, location_name, drug_name).into(),
             (Market { cash: market.cash + cost, quantity: market.quantity - quantity,  })
         );
 
         // update player
-        commands::set_entity(
-            (game_id, (player_id)).into_partitioned(), (Cash { amount: cash.amount - cost }, )
+        set !(
+            ctx.world,
+            (game_id, player_id).into(),
+            (Player {
+                name: player.name,
+                cash: player.cash - cost,
+                health: player.health,
+                arrested: player.arrested,
+                turns_remaining: player.turns_remaining,
+            })
         );
-        let maybe_drug = commands::<Drug>::try_entity(
-            (game_id, (player_id, drug_id)).into_partitioned()
-        );
+        let maybe_drug = try_get !(ctx.world, (game_id, player_id, drug_name).into(), Drug);
         let player_quantity = match maybe_drug {
             Option::Some(drug) => drug.quantity + quantity,
             Option::None(_) => quantity,
         };
-        commands::set_entity(
-            (game_id, (player_id, drug_id)).into_partitioned(),
-            (Drug { id: drug_id, quantity: player_quantity })
+        set !(
+            ctx.world,
+            (game_id, player_id, drug_name).into(),
+            (Drug { name: drug_name, quantity: player_quantity })
         );
+
+        Bought(game_id, player_id, drug_name, quantity, cost);
     }
 }
 
 #[system]
-mod Sell {
+mod sell {
     use traits::Into;
     use array::ArrayTrait;
+
+    use dojo::world::Context;
 
     use rollyourown::components::game::Game;
     use rollyourown::components::game::GameTrait;
@@ -72,75 +82,59 @@ mod Sell {
     use rollyourown::components::market::Market;
     use rollyourown::components::market::MarketTrait;
     use rollyourown::components::location::Location;
-    use rollyourown::components::player::Cash;
+    use rollyourown::components::player::Player;
     use rollyourown::components::risks::Risks;
     use rollyourown::components::risks::RisksTrait;
 
     #[event]
-    fn Sold(
-        game_id: felt252, player_id: felt252, drug_id: felt252, quantity: usize, payout: u128
-    ) {}
+    fn Sold(game_id: u32, player_id: felt252, drug_name: felt252, quantity: usize, payout: u128) {}
 
-    fn execute(game_id: felt252, location_id: felt252, drug_id: felt252, quantity: usize) {
-        let game = commands::<Game>::entity(game_id.into());
+    fn execute(
+        ctx: Context, game_id: u32, location_name: felt252, drug_name: felt252, quantity: usize
+    ) {
+        let game = get !(ctx.world, game_id.into(), Game);
         assert(game.tick(), 'cannot progress');
 
-        let player_id = starknet::get_caller_address().into();
-        let (location, cash) = commands::<(
-            Location, Cash
-        )>::entity((game_id, (player_id)).into_partitioned());
+        let player_id = ctx.origin.into();
+        let (location, player) = get !(ctx.world, (game_id, player_id).into(), (Location, Player));
+        assert(location.name == location_name, 'player is not at location');
 
-        let maybe_drug = commands::<Drug>::try_entity(
-            (game_id, (player_id, drug_id)).into_partitioned()
-        );
+        let maybe_drug = try_get !(ctx.world, (game_id, player_id, drug_name).into(), Drug);
         let player_quantity = match maybe_drug {
             Option::Some(drug) => drug.quantity,
             Option::None(()) => 0
         };
         assert(player_quantity >= quantity, 'not enough drugs to sell');
 
-        let market = commands::<Market>::entity(
-            (game_id, (location_id, drug_id)).into_partitioned()
-        );
+        let market = get !(ctx.world, (game_id, location_name, drug_name).into(), Market);
         let payout = market.sell(quantity);
 
         // update market
-        commands::set_entity(
-            (game_id, (location_id, drug_id)).into_partitioned(),
+        set !(
+            ctx.world,
+            (game_id, location_name, drug_name).into(),
             (Market { cash: market.cash - payout, quantity: market.quantity + quantity,  })
         );
 
         // update player
-        commands::set_entity(
-            (game_id, (player_id)).into_partitioned(), (Cash { amount: cash.amount + payout }, )
+        set !(
+            ctx.world,
+            (game_id, player_id).into(),
+            (Player {
+                name: player.name,
+                cash: player.cash + payout,
+                health: player.health,
+                arrested: player.arrested,
+                turns_remaining: player.turns_remaining,
+            })
         );
-        commands::set_entity(
-            (game_id, (player_id, drug_id)).into_partitioned(),
-            (Drug { id: drug_id, quantity: player_quantity - quantity })
+        set !(
+            ctx.world,
+            (game_id, player_id, drug_name).into(),
+            (Drug { name: drug_name, quantity: player_quantity - quantity })
         );
 
-        Sold(game_id, player_id, drug_id, quantity, payout);
+        Sold(game_id, player_id, drug_name, quantity, payout);
     }
 }
-//This causes a libfunc error
-// #[system]
-// mod Test {
-//     use traits::Into;
-//     use array::ArrayTrait;
-//     use option::OptionTrait;
-
-//     #[derive(Component)]
-//     struct Position {
-//         x: felt252,
-//         y: felt252,
-//     }
-
-//     fn execute() {
-//         let maybe_pos = commands::<(Position)>::entity(0.into());
-//         let pos = maybe_pos.is_some();
-//         let maybe_pos_2 = commands::<(Position)>::entity(0.into());
-//         let pos = maybe_pos.unwrap(); // seems like any method call errs (is_none(), is_some(), etc)
-//     }
-// }
-
 

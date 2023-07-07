@@ -7,50 +7,42 @@ use debug::PrintTrait;
 
 use starknet::{ContractAddress, syscalls::deploy_syscall};
 use starknet::class_hash::{ClassHash, Felt252TryIntoClassHash};
-use dojo_core::storage::query::{IntoPartitioned, IntoPartitionedQuery};
-use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
-use dojo_core::string::ShortStringTrait;
-use dojo_core::integer::u250Trait;
-use dojo_core::executor::Executor;
-use dojo_core::world::World;
+use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
 
-use rollyourown::tests::spawn::{spawn_game, spawn_location, spawn_player};
-use rollyourown::components::location::Location;
+use dojo::test_utils::spawn_test_world;
+
+use rollyourown::components::location::{location, Location};
+use rollyourown::tests::create::{spawn_game, spawn_player};
 
 #[test]
-#[available_gas(30000000)]
+#[available_gas(110000000)]
 fn test_travel() {
     let (world_address, game_id, player_id) = spawn_game(); // creator auto joins
-    let location_one = spawn_location(world_address, game_id);
-    let location_two = spawn_location(world_address, game_id);
     let world = IWorldDispatcher { contract_address: world_address };
 
-
+    let brooklyn_id: felt252 = 'Brooklyn'.into();
     let mut travel_calldata = array::ArrayTrait::<felt252>::new();
-    travel_calldata.append(game_id);
-    travel_calldata.append(location_one);
+    travel_calldata.append(game_id.into());
+    travel_calldata.append(brooklyn_id.into());
 
-    world.execute('Travel'.into(), travel_calldata.span());
+    world.execute('travel'.into(), travel_calldata.span());
 
-    let mut res = world.entity(
-        'Location'.into(), (game_id, (player_id)).into_partitioned(), 0, 0
-    );
+    let mut res = world.entity('Location'.into(), (game_id, player_id).into(), 0, 0);
     assert(res.len() > 0, 'no player location');
 
     let location = serde::Serde::<Location>::deserialize(ref res).expect('deserialization failed');
-    assert(location.id == location_one, 'incorrect travel');
+    assert(location.name == brooklyn_id, 'incorrect travel');
 
+    let queens_id: felt252 = 'Queens'.into();
     let mut travel_calldata = array::ArrayTrait::<felt252>::new();
-    travel_calldata.append(game_id);
-    travel_calldata.append(location_two);
+    travel_calldata.append(game_id.into());
+    travel_calldata.append(queens_id.into());
 
-    world.execute('Travel'.into(), travel_calldata.span());
+    world.execute('travel'.into(), travel_calldata.span());
 
-    let mut res = world.entity(
-        'Location'.into(), (game_id, (player_id)).into_partitioned(), 0, 0
-    );
+    let mut res = world.entity('Location'.into(), (game_id, player_id).into(), 0, 0);
     assert(res.len() > 0, 'no player location');
 
     let location = serde::Serde::<Location>::deserialize(ref res).expect('deserialization failed');
-    assert(location.id == location_two, 'incorrect travel');
+    assert(location.name == queens_id, 'incorrect travel');
 }
