@@ -2,11 +2,12 @@
 mod create_game {
     use array::ArrayTrait;
     use box::BoxTrait;
-    use traits::Into;
+    use traits::{Into, TryInto};
 
     use dojo::world::Context;
 
     use rollyourown::events::{emit, GameCreated, PlayerJoined};
+    use rollyourown::components::name::Name;
     use rollyourown::components::game::Game;
     use rollyourown::components::player::Player;
     use rollyourown::components::risks::Risks;
@@ -14,9 +15,10 @@ mod create_game {
     use rollyourown::components::drug::{Drug, DrugTrait};
     use rollyourown::components::location::{Location, LocationTrait};
     use rollyourown::constants::{
-        SCALING_FACTOR, TRAVEL_RISK, HURT_RISK, MUGGED_RISK, ARRESTED_RISK, MARKET_CASH,
-        MARKET_QUANTITY
+        SCALING_FACTOR, TRAVEL_RISK, HURT_RISK, MUGGED_RISK, ARRESTED_RISK, MIN_CASH, MAX_CASH,
+        MIN_QUANITTY, MAX_QUANTITY, STARTING_CASH
     };
+    use rollyourown::utils::random;
 
     fn execute(
         ctx: Context, start_time: u64, max_players: usize, max_turns: usize
@@ -48,11 +50,7 @@ mod create_game {
             (game_id, player_id).into(),
             (
                 Player {
-                    name: 0, // set at end of game
-                    cash: 100 * SCALING_FACTOR, // $100
-                    health: 100,
-                    arrested: false,
-                    turns_remaining: max_turns
+                    cash: STARTING_CASH, health: 100, turns_remaining: max_turns
                     }, Location {
                     name: location_name
                 }
@@ -81,15 +79,33 @@ mod create_game {
                         )
                     );
 
+                    let mut seed = starknet::get_tx_info().unbox().transaction_hash;
+                    seed = pedersen(seed, *location_name);
+
                     let mut drugs = DrugTrait::all();
                     loop {
                         match drugs.pop_front() {
                             Option::Some(drug_name) => {
+                                // HACK: temp hack to get some randomness
+                                seed = pedersen(seed, *drug_name);
+                                let market_cash = random(seed, MIN_CASH, MAX_CASH);
+                                let market_quantity: usize = random(
+                                    seed, MIN_QUANITTY.into(), MAX_QUANTITY.into()
+                                )
+                                    .try_into()
+                                    .unwrap();
+
                                 //set market entity
                                 set !(
                                     ctx.world,
                                     (game_id, *location_name, *drug_name).into(),
-                                    (Market { cash: MARKET_CASH, quantity: MARKET_QUANTITY })
+                                    (
+                                        Name {
+                                            short_string: *drug_name
+                                            }, Market {
+                                            cash: market_cash, quantity: market_quantity
+                                        }
+                                    )
                                 );
                             },
                             Option::None(()) => {

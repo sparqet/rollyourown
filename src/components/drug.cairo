@@ -1,10 +1,9 @@
 use array::{ArrayTrait, SpanTrait};
 use traits::{Into, TryInto};
 
-#[derive(Component, Copy, Drop, Serde)]
+#[derive(Component, Copy, Drop, Serde, SerdeLen)]
 struct Drug {
-    name: felt252,
-    quantity: usize,
+    quantity: usize, 
 }
 
 trait DrugTrait {

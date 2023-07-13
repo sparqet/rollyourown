@@ -8,9 +8,13 @@ import {
   TransactionStatus,
 } from "starknet";
 
+export const SCALING_FACTOR = 10000;
+export const REFETCH_INTERVAL = 1000; // really need graphql subscriptions...
+
 interface DojoInterface {
   account: Account;
   isPending: boolean;
+  error?: Error;
   execute: (systemName: string, params: BigNumberish[]) => Promise<string>;
 }
 
@@ -33,9 +37,11 @@ export function DojoProvider({
   children?: ReactNode;
 }): JSX.Element {
   const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<Error>();
 
   const execute = async (systemName: string, params: BigNumberish[]) => {
     setIsPending(true);
+    setError(undefined);
 
     return account
       .execute({
@@ -54,17 +60,19 @@ export function DojoProvider({
         });
 
         console.log("transaction hash: " + transaction_hash);
+
         return transaction_hash;
       })
       .catch((e) => {
         console.error(e);
+        setError(e);
         throw e;
       })
       .finally(() => setIsPending(false));
   };
 
   return (
-    <DojoContext.Provider value={{ account, isPending, execute }}>
+    <DojoContext.Provider value={{ account, isPending, error, execute }}>
       {children}
     </DojoContext.Provider>
   );

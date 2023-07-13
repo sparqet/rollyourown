@@ -6,10 +6,13 @@ mod buy {
 
     use dojo::world::Context;
 
-    use rollyourown::components::{
-        game::{Game, GameTrait}, drug::Drug, market::{Market, MarketTrait}, location::Location
-    };
-    use rollyourown::components::{player::Player, risks::{Risks, RisksTrait}};
+    use rollyourown::components::name::Name;
+    use rollyourown::components::drug::Drug;
+    use rollyourown::components::player::Player;
+    use rollyourown::components::location::Location;
+    use rollyourown::components::game::{Game, GameTrait};
+    use rollyourown::components::risks::{Risks, RisksTrait};
+    use rollyourown::components::market::{Market, MarketTrait};
 
     #[event]
     fn Bought(game_id: u32, player_id: felt252, drug_name: felt252, quantity: usize, cost: u128) {}
@@ -47,10 +50,8 @@ mod buy {
             ctx.world,
             (game_id, player_id).into(),
             (Player {
-                name: player.name,
                 cash: player.cash - cost,
                 health: player.health,
-                arrested: player.arrested,
                 turns_remaining: player.turns_remaining,
             })
         );
@@ -62,7 +63,7 @@ mod buy {
         set !(
             ctx.world,
             (game_id, player_id, drug_name).into(),
-            (Drug { name: drug_name, quantity: player_quantity })
+            (Name { short_string: drug_name }, Drug { quantity: player_quantity })
         );
 
         Bought(game_id, player_id, drug_name, quantity, cost);
@@ -76,15 +77,13 @@ mod sell {
 
     use dojo::world::Context;
 
-    use rollyourown::components::game::Game;
-    use rollyourown::components::game::GameTrait;
+    use rollyourown::components::name::Name;
     use rollyourown::components::drug::Drug;
-    use rollyourown::components::market::Market;
-    use rollyourown::components::market::MarketTrait;
-    use rollyourown::components::location::Location;
     use rollyourown::components::player::Player;
-    use rollyourown::components::risks::Risks;
-    use rollyourown::components::risks::RisksTrait;
+    use rollyourown::components::location::Location;
+    use rollyourown::components::game::{Game, GameTrait};
+    use rollyourown::components::risks::{Risks, RisksTrait};
+    use rollyourown::components::market::{Market, MarketTrait};
 
     #[event]
     fn Sold(game_id: u32, player_id: felt252, drug_name: felt252, quantity: usize, payout: u128) {}
@@ -121,17 +120,15 @@ mod sell {
             ctx.world,
             (game_id, player_id).into(),
             (Player {
-                name: player.name,
                 cash: player.cash + payout,
                 health: player.health,
-                arrested: player.arrested,
                 turns_remaining: player.turns_remaining,
             })
         );
         set !(
             ctx.world,
             (game_id, player_id, drug_name).into(),
-            (Drug { name: drug_name, quantity: player_quantity - quantity })
+            (Name { short_string: drug_name }, Drug { quantity: player_quantity - quantity })
         );
 
         Sold(game_id, player_id, drug_name, quantity, payout);

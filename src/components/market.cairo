@@ -4,7 +4,7 @@ use debug::PrintTrait;
 
 use rollyourown::constants::SCALING_FACTOR;
 
-#[derive(Component, Copy, Drop, Serde)]
+#[derive(Component, Copy, Drop, Serde, SerdeLen)]
 struct Market {
     cash: u128, // fixed point
     quantity: usize,
@@ -61,4 +61,3 @@ fn test_market_sell() {
     let payout = market.sell(5);
     assert(payout == 3334, 'wrong payout');
 }
-

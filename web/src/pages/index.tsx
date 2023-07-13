@@ -13,7 +13,6 @@ import { Clock, Sound } from "@/components/icons";
 import { Footer } from "@/components/Footer";
 import Content from "@/components/Content";
 import { User } from "@/components/icons/archive";
-import { startGame, useGameStore } from "@/hooks/state";
 import { playSound, Sounds } from "@/hooks/sound";
 import BorderImagePixelated from "@/components/icons/BorderImagePixelated";
 import BorderImage from "@/components/icons/BorderImage";
@@ -22,16 +21,16 @@ import Leaderboard from "@/components/Leaderboard";
 import { useRyoSystems } from "@/hooks/dojo/systems/useRyoSystems";
 import { getLocationByName } from "@/hooks/ui";
 import { useState } from "react";
+import { CreateEvent, JoinedEvent } from "@/utils/event";
 
 // hardcode game params for now
 const START_TIME = 0;
 const MAX_PLAYERS = 1;
-const NUM_TURNS = 10;
+const NUM_TURNS = 30;
 
 export default function Home() {
   const router = useRouter();
-  const [isCreating, setIsCreating] = useState(false);
-  const { create } = useRyoSystems();
+  const { create, isPending, error: txError } = useRyoSystems();
   return (
     <Layout
       title="Roll Your Own"
@@ -55,22 +54,16 @@ export default function Home() {
             <VStack w="full" p="20px" gap="20px">
               <Button
                 w="full"
-                isLoading={isCreating}
-                isDisabled={isCreating}
+                isLoading={isPending && !txError}
                 onClick={async () => {
-                  setIsCreating(true);
-                  
-                  const { gameId, locationName } = await create(
+                  const { gameId, locationName } = (await create(
                     START_TIME,
                     MAX_PLAYERS,
                     NUM_TURNS,
-                  );
+                  )) as JoinedEvent;
 
-                  startGame();
                   router.push(
-                    `/${gameId}/location/${
-                      getLocationByName(locationName).slug
-                    }`,
+                    `/${gameId}/${getLocationByName(locationName).slug}`,
                   );
                 }}
               >
