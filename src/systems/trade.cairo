@@ -12,7 +12,8 @@ mod buy {
     use rollyourown::components::location::Location;
     use rollyourown::components::game::{Game, GameTrait};
     use rollyourown::components::risks::{Risks, RisksTrait};
-    use rollyourown::components::market::{Market, MarketTrait};
+    use dojo_defi::constant_product_market::components::{Market, MarketTrait};
+
 
     #[event]
     fn Bought(game_id: u32, player_id: felt252, drug_name: felt252, quantity: usize, cost: u128) {}
@@ -83,7 +84,8 @@ mod sell {
     use rollyourown::components::location::Location;
     use rollyourown::components::game::{Game, GameTrait};
     use rollyourown::components::risks::{Risks, RisksTrait};
-    use rollyourown::components::market::{Market, MarketTrait};
+    use dojo_defi::constant_product_market::components::{Market, MarketTrait};
+
 
     #[event]
     fn Sold(game_id: u32, player_id: felt252, drug_name: felt252, quantity: usize, payout: u128) {}

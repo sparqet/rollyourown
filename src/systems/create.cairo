@@ -6,12 +6,13 @@ mod create_game {
 
     use dojo::world::Context;
 
+    use dojo_defi::constant_product_market::components::Market;
+
     use rollyourown::events::{emit, GameCreated, PlayerJoined};
     use rollyourown::components::name::Name;
     use rollyourown::components::game::Game;
     use rollyourown::components::player::Player;
     use rollyourown::components::risks::Risks;
-    use rollyourown::components::market::Market;
     use rollyourown::components::drug::{Drug, DrugTrait};
     use rollyourown::components::location::{Location, LocationTrait};
     use rollyourown::constants::{

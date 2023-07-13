@@ -14,8 +14,10 @@ use dojo::world::Context;
 use dojo::string::ShortStringTrait;
 use dojo::integer::u250Trait;
 
+use dojo_defi::constant_product_market::components::{Market, MarketTrait};
+
 use rollyourown::components::{
-    player::Cash, drug::Drug, location::Location, market::{Market, MarketTrait}
+    player::Cash, drug::Drug, location::Location}
 };
 use rollyourown::tests::spawn::{spawn_game, spawn_location, spawn_player};
 use rollyourown::constants::SCALING_FACTOR;

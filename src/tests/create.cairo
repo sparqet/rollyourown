@@ -17,8 +17,9 @@ use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
 
 use dojo::test_utils::spawn_test_world;
 
+use dojo_defi::constant_product_market::components::{market, Market};
+
 use rollyourown::components::game::{game, Game};
-use rollyourown::components::market::{market, Market};
 use rollyourown::components::player::{player, Player};
 use rollyourown::components::drug::{drug, Drug};
 use rollyourown::components::location::{location, Location};
